@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GTA: Open World City & Heist</title>
+  <title>GTA: Open World City</title>
   <style>
     * {
       box-sizing: border-box;
@@ -42,11 +42,6 @@
       color: #fff;
       text-align: center;
       padding: 20px;
-      transition: opacity 0.5s ease;
-    }
-    #main-menu.fade-out {
-      opacity: 0;
-      pointer-events: none;
     }
     #main-menu h1 {
       font-size: 3.5rem;
@@ -96,7 +91,7 @@
       height: 100%;
       pointer-events: none;
       z-index: 10;
-      display: none;
+      display: flex;
       flex-direction: column;
       justify-content: space-between;
       padding: 20px;
@@ -215,7 +210,7 @@
       Explore the endless open-world city on foot with your character or drive your supercar. 
       Collect cash checkpoints, perform epic stunts, and press <b>F</b> or <b>Tab</b> to enter/exit vehicles!
     </p>
-    <button id="start-btn">Start Game</button>
+    <button id="start-btn" onclick="startGame()">Start Game</button>
   </div>
 
   <!-- In-Game HUD -->

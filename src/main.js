@@ -9,14 +9,13 @@ import { soundManager } from './audio.js';
 // Game State
 let scene, camera, renderer;
 let car, cityMap, missionMgr, player;
-let cameraMode = 1; // 1: Chase/Follow, 2: First-Person, 3: Orbit
-let controlMode = 'onfoot'; // Start strictly ON FOOT outside the car!
+let cameraMode = 1;
+let controlMode = 'onfoot';
 let dayTime = true;
 let sunLight, hemiLight;
-let gameStarted = false;
+let gameStarted = true; // Start immediately without blocking
 let clock = new THREE.Clock();
 
-// Input tracking
 const input = {
   forward: false,
   backward: false,
@@ -28,10 +27,8 @@ const input = {
 };
 
 function init() {
-  // DOM Elements
   const mainMenu = document.getElementById('main-menu');
-  const startBtn = document.getElementById('start-btn');
-  const hud = document.getElementById('hud');
+  mainMenu.style.display = 'none'; // Hide menu immediately so game is ready instantly
 
   // Three.js Setup
   scene = new THREE.Scene();
@@ -70,26 +67,14 @@ function init() {
   // Generate Procedural GTA City Map
   cityMap = new CityMap(scene);
 
-  // Initialize Car (parked nearby) and Player (on foot)
+  // Initialize Car & Player
   car = new Car(scene);
-  car.position.set(5, 2, 0); // Parked 5 meters away
+  car.position.set(5, 2, 0);
 
   player = new Player(scene, camera);
-  player.position.set(0, 0, 0); // Spawns directly on foot in the city
+  player.position.set(0, 0, 0);
 
   missionMgr = new MissionManager(scene);
-
-  // Event Listener for Start Game Button
-  startBtn.addEventListener('click', () => {
-    mainMenu.classList.add('fade-out');
-    setTimeout(() => {
-      mainMenu.style.display = 'none';
-      hud.style.display = 'flex';
-    }, 500);
-    gameStarted = true;
-    soundManager.init();
-    soundManager.toggleMusic();
-  });
 
   setupInputListeners();
 
@@ -107,9 +92,19 @@ function init() {
 
   window.addEventListener('resize', onWindowResize);
 
+  // Start Audio & Music automatically
+  soundManager.init();
+  soundManager.toggleMusic();
+
   // Start Loop
   animate();
 }
+
+window.startGame = function() {
+  const mainMenu = document.getElementById('main-menu');
+  if (mainMenu) mainMenu.style.display = 'none';
+  gameStarted = true;
+};
 
 function setupInputListeners() {
   window.addEventListener('keydown', (e) => {
@@ -122,32 +117,17 @@ function setupInputListeners() {
 }
 
 function handleKey(key, isDown) {
-  if (!gameStarted) {
-    if (key === ' ' || key === 'Enter') {
-      document.getElementById('start-btn').click();
-    }
-    return;
-  }
-
-  // Toggle mode between Car and On Foot with 'F' or 'Tab'
   if (isDown && (key.toLowerCase() === 'f' || key === 'Tab')) {
     if (controlMode === 'onfoot') {
-      // Check if close to car to enter
       const dist = player.position.distanceTo(car.position);
       if (dist < 8) {
         controlMode = 'car';
-        // Move character inside or hide character mesh
         player.mesh.visible = false;
-        console.log('Entered car.');
-      } else {
-        console.log('Too far from car to enter!');
       }
     } else {
-      // Exit car
       controlMode = 'onfoot';
       player.position.copy(car.position).add(new THREE.Vector3(2, 0, 2));
       player.mesh.visible = true;
-      console.log('Exited car.');
     }
     return;
   }
@@ -234,14 +214,6 @@ function updateHUD() {
 }
 
 function updateCamera() {
-  if (!gameStarted) {
-    // Cinematic menu preview camera rotation
-    const time = Date.now() * 0.0005;
-    camera.position.set(Math.cos(time) * 35, 15, Math.sin(time) * 35);
-    camera.lookAt(0, 2, 0);
-    return;
-  }
-
   if (controlMode === 'car' && car) {
     const carPos = car.position;
     const carRot = car.rotation;
@@ -284,16 +256,14 @@ function animate() {
 
   const delta = clock.getDelta();
 
-  if (gameStarted) {
-    if (controlMode === 'car' && car) {
-      car.update(input, soundManager);
-      missionMgr.checkCollision(car.position, soundManager);
-    } else if (controlMode === 'onfoot' && player) {
-      player.update(input, delta);
-      missionMgr.checkCollision(player.position, soundManager);
-    }
-    updateHUD();
+  if (controlMode === 'car' && car) {
+    car.update(input, soundManager);
+    missionMgr.checkCollision(car.position, soundManager);
+  } else if (controlMode === 'onfoot' && player) {
+    player.update(input, delta);
+    missionMgr.checkCollision(player.position, soundManager);
   }
+  updateHUD();
 
   updateCamera();
 

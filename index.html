@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GTA: Open World City & Heist</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      user-select: none;
+    }
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #000;
+    }
+    #canvas-container {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
+    /* Main Menu / Start Screen */
+    #main-menu {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, rgba(15, 15, 30, 0.95), rgba(40, 10, 30, 0.95));
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+      color: #fff;
+      text-align: center;
+      padding: 20px;
+      transition: opacity 0.5s ease;
+    }
+    #main-menu.fade-out {
+      opacity: 0;
+      pointer-events: none;
+    }
+    #main-menu h1 {
+      font-size: 3.5rem;
+      color: #ffaa00;
+      text-shadow: 0 0 20px rgba(255, 170, 0, 0.6), 2px 2px 4px #000;
+      margin-bottom: 10px;
+      letter-spacing: 2px;
+    }
+    #main-menu h2 {
+      font-size: 1.5rem;
+      color: #00ffcc;
+      margin-bottom: 25px;
+      text-shadow: 0 0 10px rgba(0, 255, 204, 0.4);
+    }
+    #main-menu p {
+      max-width: 600px;
+      color: #ccc;
+      font-size: 1.1rem;
+      line-height: 1.6;
+      margin-bottom: 30px;
+    }
+    #start-btn {
+      background: linear-gradient(135deg, #ff5500, #ffaa00);
+      color: #fff;
+      border: none;
+      padding: 15px 45px;
+      font-size: 1.4rem;
+      font-weight: bold;
+      border-radius: 30px;
+      cursor: pointer;
+      box-shadow: 0 5px 25px rgba(255, 85, 0, 0.5);
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    #start-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 8px 30px rgba(255, 170, 0, 0.8);
+    }
+
+    /* In-Game HUD */
+    #hud {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 10;
+      display: none;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 20px;
+    }
+    .hud-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+    .stats-card {
+      background: rgba(0, 0, 0, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(8px);
+      padding: 15px 25px;
+      border-radius: 12px;
+      color: #fff;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    }
+    .stat-row {
+      font-size: 1.2rem;
+      margin: 5px 0;
+      font-weight: bold;
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+    }
+    .stat-row span {
+      color: #00ffcc;
+    }
+    .cash {
+      color: #55ff55 !important;
+    }
+
+    /* Speedometer & Gear */
+    .speedometer-card {
+      text-align: center;
+      background: rgba(0, 0, 0, 0.7);
+      border: 2px solid #ff5500;
+      border-radius: 50%;
+      width: 140px;
+      height: 140px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 0 0 20px rgba(255, 85, 0, 0.4);
+    }
+    .speed-val {
+      font-size: 2.5rem;
+      font-weight: bold;
+      color: #fff;
+      line-height: 1;
+    }
+    .speed-unit {
+      font-size: 0.8rem;
+      color: #ffaa00;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .gear-val {
+      font-size: 1rem;
+      color: #00ffcc;
+      margin-top: 4px;
+      font-weight: bold;
+    }
+
+    /* Controls & Buttons Bottom */
+    .hud-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+    .controls-hint {
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 15px 20px;
+      border-radius: 10px;
+      color: #ddd;
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+    .controls-hint b {
+      color: #ffaa00;
+    }
+    .action-buttons {
+      display: flex;
+      gap: 10px;
+      pointer-events: auto;
+    }
+    .hud-btn {
+      background: rgba(20, 20, 35, 0.8);
+      border: 1px solid #00ffcc;
+      color: #00ffcc;
+      padding: 10px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.2s;
+      box-shadow: 0 0 10px rgba(0, 255, 204, 0.2);
+    }
+    .hud-btn:hover {
+      background: #00ffcc;
+      color: #000;
+      box-shadow: 0 0 15px rgba(0, 255, 204, 0.6);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Main Menu / Start Screen -->
+  <div id="main-menu">
+    <h1>GTA: CITY OPEN WORLD</h1>
+    <h2>Procedural Metropolis & Action Experience</h2>
+    <p>
+      Explore the endless open-world city on foot with your character or drive your supercar. 
+      Collect cash checkpoints, perform epic stunts, and press <b>F</b> or <b>Tab</b> to enter/exit vehicles!
+    </p>
+    <button id="start-btn">Start Game</button>
+  </div>
+
+  <!-- In-Game HUD -->
+  <div id="hud">
+    <div class="hud-top">
+      <div class="stats-card">
+        <div class="stat-row">Cash: <span id="cash-val" class="cash">$1000</span></div>
+        <div class="stat-row">Score: <span id="score-val">0</span></div>
+        <div class="stat-row">Mode: <span id="mode-val">ON FOOT</span></div>
+      </div>
+
+      <div class="speedometer-card">
+        <div class="speed-val" id="speed-val">0</div>
+        <div class="speed-unit">KM/H</div>
+        <div class="gear-val" id="gear-val">WALK</div>
+      </div>
+    </div>
+
+    <div class="hud-bottom">
+      <div class="controls-hint">
+        <b>W / A / S / D:</b> Move/Steer | <b>Space:</b> Brake/Drift<br>
+        <b>F / Tab:</b> Enter / Exit Car | <b>Shift:</b> Nitro<br>
+        <b>C:</b> Camera | <b>R:</b> Reset | <b>M:</b> Music | <b>L:</b> Day/Night
+      </div>
+      <div class="action-buttons">
+        <button class="hud-btn" id="camera-btn">📷 Camera</button>
+        <button class="hud-btn" id="time-btn">🌓 Day/Night</button>
+        <button class="hud-btn" id="music-btn">🎵 Music</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Canvas Container -->
+  <div id="canvas-container"></div>
+
+  <!-- Vite Entry Point -->
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
